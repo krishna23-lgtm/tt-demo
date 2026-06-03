@@ -35,6 +35,37 @@ Open `http://localhost:5174`.
 - `/watchTogether/join`: join room
 - `/watchTogether/room/:roomId`: Firebase-backed watch room
 
+## Deploy
+
+This project is configured for Firebase Hosting with SPA routing.
+
+Before deploying, make sure `.env` contains all `VITE_FIREBASE_*` values and these Firebase products are enabled:
+
+- Authentication with Anonymous sign-in
+- Cloud Firestore
+- Realtime Database
+- Firebase Hosting
+
+Deploy everything:
+
+```bash
+npm run deploy
+```
+
+Deploy only the frontend:
+
+```bash
+npm run deploy:hosting
+```
+
+Deploy only Firestore and Realtime Database rules:
+
+```bash
+npm run deploy:rules
+```
+
+Firebase Hosting runs `npm run build` automatically before hosting deploys. The deployed app serves `dist` and rewrites all routes to `index.html`, so direct room links such as `/watchTogether/room/ABCD1234` work after refresh.
+
 ## Production Note
 
 This app works well for a Firebase MVP. For production-grade host transfer, entitlement checks, billing, and anti-abuse controls, move critical writes into Cloud Functions and keep client security rules strict.

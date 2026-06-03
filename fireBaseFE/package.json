@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "deploy": "NO_UPDATE_NOTIFIER=1 firebase deploy --only hosting,firestore,database",
+    "deploy:hosting": "NO_UPDATE_NOTIFIER=1 firebase deploy --only hosting",
+    "deploy:rules": "NO_UPDATE_NOTIFIER=1 firebase deploy --only firestore,database",
+    "deploy:dry-run": "NO_UPDATE_NOTIFIER=1 firebase deploy --only hosting,firestore,database --dry-run"
   },
   "dependencies": {
     "firebase": "^12.7.0",
@@ -21,6 +25,7 @@
     "eslint": "^9.17.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
+    "firebase-tools": "^15.19.0",
     "vite": "^8.0.16"
   }
 }
