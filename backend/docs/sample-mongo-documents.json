@@ -1,0 +1,49 @@
+{
+  "rooms": [
+    {
+      "_id": {
+        "$oid": "665ee22a6a9a5a4d90f00001"
+      },
+      "roomId": "ABCD1234",
+      "movieId": "movie123",
+      "hostId": "user1",
+      "hostName": "Ram",
+      "participants": [
+        {
+          "userId": "user1",
+          "userName": "Ram",
+          "joinedAt": {
+            "$date": "2026-06-01T14:00:00Z"
+          }
+        },
+        {
+          "userId": "user2",
+          "userName": "Aman",
+          "joinedAt": {
+            "$date": "2026-06-01T14:02:00Z"
+          }
+        }
+      ],
+      "createdAt": {
+        "$date": "2026-06-01T14:00:00Z"
+      },
+      "updatedAt": {
+        "$date": "2026-06-01T14:02:00Z"
+      }
+    }
+  ],
+  "chat_messages": [
+    {
+      "_id": {
+        "$oid": "665ee2be6a9a5a4d90f00002"
+      },
+      "roomId": "ABCD1234",
+      "userId": "user2",
+      "userName": "Aman",
+      "message": "Amazing scene 🔥",
+      "timestamp": {
+        "$date": "2026-06-01T14:03:10Z"
+      }
+    }
+  ]
+}

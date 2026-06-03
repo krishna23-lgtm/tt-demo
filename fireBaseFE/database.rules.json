@@ -1,0 +1,25 @@
+{
+  "rules": {
+    "playback": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "presence": {
+      "$roomId": {
+        "$userId": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.uid === $userId"
+        }
+      }
+    },
+    "reactions": {
+      "$roomId": {
+        ".indexOn": ["timestamp"],
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}
