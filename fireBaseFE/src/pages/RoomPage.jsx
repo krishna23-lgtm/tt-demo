@@ -1,4 +1,4 @@
-import { Copy, DoorOpen, Eye, EyeOff, RefreshCw, Users } from "lucide-react";
+import { Copy, DoorOpen, Eye, EyeOff, Link as LinkIcon, Mail, MessageCircle, RefreshCw, Share2, Users, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   leaveRoom,
@@ -19,6 +19,7 @@ import { getContentById } from "../data/catalog";
 
 const REACTION_VISIBLE_MS = 3000;
 const CHAT_TOAST_VISIBLE_MS = 2000;
+const HOST_TOAST_VISIBLE_MS = 3200;
 const REACTION_EMOJIS = ["❤️", "😂", "🔥", "👍"];
 
 export default function RoomPage({ session, initialSync, onLeave }) {
@@ -32,6 +33,11 @@ export default function RoomPage({ session, initialSync, onLeave }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [hasUnreadChat, setHasUnreadChat] = useState(false);
   const [chatPreview, setChatPreview] = useState(null);
+  const [copyToast, setCopyToast] = useState("");
+  const [hostChangeToast, setHostChangeToast] = useState("");
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [wideLayout, setWideLayout] = useState(() => (
     typeof window !== "undefined" && window.matchMedia("(min-width: 1061px)").matches
   ));
@@ -39,7 +45,20 @@ export default function RoomPage({ session, initialSync, onLeave }) {
   const messageTrackerReadyRef = useRef(false);
   const chatToastTimerRef = useRef(null);
   const chatToastTimerMessageIdRef = useRef(null);
+  const copyToastTimerRef = useRef(null);
+  const hostToastTimerRef = useRef(null);
   const title = room ? getContentById(room.movieId) : null;
+  const inviteUrl = useMemo(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return `${origin}/watchTogether/join/${session.roomId}`;
+  }, [session.roomId]);
+  const inviteTitle = "Xstream Play Watch Room";
+  const inviteText = "Join this Xstream Play watch room.";
+  const inviteMessage = `${inviteText}\n${inviteUrl}`;
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`;
+  const smsShareUrl = `sms:?&body=${encodeURIComponent(inviteMessage)}`;
+  const emailShareUrl = `mailto:?subject=${encodeURIComponent(inviteTitle)}&body=${encodeURIComponent(inviteMessage)}`;
+  const canUseNativeShare = typeof navigator !== "undefined" && Boolean(navigator.share);
   const visibleReactions = useMemo(() => {
     const seen = new Set();
     return reactions.filter((reaction) => {
@@ -62,6 +81,17 @@ export default function RoomPage({ session, initialSync, onLeave }) {
         if (current.some((item) => item.id === reaction.id)) {
           return current;
         }
+        if (reaction.emoji === "HOST_CHANGED") {
+          const nextHostName = reaction.userName || "New host";
+          setHostChangeToast(`Now ${nextHostName} is the host`);
+          if (hostToastTimerRef.current) {
+            window.clearTimeout(hostToastTimerRef.current);
+          }
+          hostToastTimerRef.current = window.setTimeout(() => {
+            setHostChangeToast("");
+            hostToastTimerRef.current = null;
+          }, HOST_TOAST_VISIBLE_MS);
+        }
         const timeoutId = window.setTimeout(() => {
           setReactions((items) => items.filter((item) => item.id !== reaction.id));
         }, REACTION_VISIBLE_MS);
@@ -80,9 +110,14 @@ export default function RoomPage({ session, initialSync, onLeave }) {
     messageTrackerReadyRef.current = false;
     setHasUnreadChat(false);
     setChatPreview(null);
+    setHostChangeToast("");
     if (chatToastTimerRef.current) {
       window.clearTimeout(chatToastTimerRef.current);
       chatToastTimerRef.current = null;
+    }
+    if (hostToastTimerRef.current) {
+      window.clearTimeout(hostToastTimerRef.current);
+      hostToastTimerRef.current = null;
     }
     chatToastTimerMessageIdRef.current = null;
   }, [session.roomId]);
@@ -90,6 +125,12 @@ export default function RoomPage({ session, initialSync, onLeave }) {
   useEffect(() => () => {
     if (chatToastTimerRef.current) {
       window.clearTimeout(chatToastTimerRef.current);
+    }
+    if (copyToastTimerRef.current) {
+      window.clearTimeout(copyToastTimerRef.current);
+    }
+    if (hostToastTimerRef.current) {
+      window.clearTimeout(hostToastTimerRef.current);
     }
   }, []);
 
@@ -160,13 +201,99 @@ export default function RoomPage({ session, initialSync, onLeave }) {
     return () => media.removeEventListener("change", updateLayout);
   }, []);
 
-  const copy = async () => {
-    await navigator.clipboard.writeText(session.roomId);
+  useEffect(() => {
+    if (!leaveConfirmOpen) {
+      return undefined;
+    }
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape" && !leaving) {
+        setLeaveConfirmOpen(false);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [leaveConfirmOpen, leaving]);
+
+  useEffect(() => {
+    if (!inviteOpen) {
+      return undefined;
+    }
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") {
+        setInviteOpen(false);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [inviteOpen]);
+
+  const showRoomToast = (message) => {
+    setCopyToast(message);
+    if (copyToastTimerRef.current) {
+      window.clearTimeout(copyToastTimerRef.current);
+    }
+    copyToastTimerRef.current = window.setTimeout(() => {
+      setCopyToast("");
+      copyToastTimerRef.current = null;
+    }, 2200);
   };
 
-  const leave = async () => {
-    await leaveRoom(session.roomId, user);
-    onLeave();
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(session.roomId);
+      showRoomToast(`Room code ${session.roomId} copied`);
+    } catch {
+      showRoomToast("Could not copy room code");
+    }
+  };
+
+  const shareInvite = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: inviteTitle,
+          text: inviteText,
+          url: inviteUrl
+        });
+        setInviteOpen(false);
+        return;
+      }
+      await copyInviteLink();
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        showRoomToast("Could not share invite");
+      }
+    }
+  };
+
+  const copyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteOpen(false);
+      showRoomToast("Invite link copied");
+    } catch {
+      showRoomToast("Could not copy invite");
+    }
+  };
+
+  const requestLeave = () => {
+    setLeaveConfirmOpen(true);
+  };
+
+  const stayInRoom = () => {
+    setLeaveConfirmOpen(false);
+  };
+
+  const confirmLeave = async () => {
+    setLeaving(true);
+    try {
+      await leaveRoom(session.roomId, user);
+      onLeave();
+    } catch (err) {
+      setError(err.message);
+      setLeaving(false);
+      setLeaveConfirmOpen(false);
+    }
   };
 
   const togglePanel = (panel) => {
@@ -201,13 +328,17 @@ export default function RoomPage({ session, initialSync, onLeave }) {
         </div>
         <div className="header-actions">
           <span className="connection-pill online">Live room</span>
+          <button className="secondary-action invite-action" type="button" onClick={() => setInviteOpen(true)}>
+            <Share2 size={17} aria-hidden="true" />
+            Invite
+          </button>
           <button className="icon-button" type="button" onClick={copy} title="Copy room code">
             <Copy size={18} aria-hidden="true" />
           </button>
           <button className="icon-button" type="button" onClick={() => window.location.reload()} title="Refresh">
             <RefreshCw size={18} aria-hidden="true" />
           </button>
-          <button className="secondary-action" type="button" onClick={leave}>
+          <button className="secondary-action danger-action" type="button" onClick={requestLeave}>
             <DoorOpen size={17} aria-hidden="true" />
             Leave
           </button>
@@ -215,6 +346,79 @@ export default function RoomPage({ session, initialSync, onLeave }) {
       </header>
 
       {error && <div className="banner error">{error}</div>}
+      {copyToast && <div className="room-copy-toast" role="status">{copyToast}</div>}
+      {hostChangeToast && (
+        <div className="host-change-toast" role="status">
+          <span>Host changed</span>
+          <strong>{hostChangeToast}</strong>
+        </div>
+      )}
+
+      {inviteOpen && (
+        <div className="invite-backdrop" role="presentation" onMouseDown={() => setInviteOpen(false)}>
+          <section className="invite-sheet" role="dialog" aria-modal="true" aria-labelledby="invite-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="invite-sheet-heading">
+              <div>
+                <span className="eyebrow">Invite</span>
+                <h2 id="invite-title">Share watch room</h2>
+                <p>Friends open the link, enter their name, and join this room.</p>
+              </div>
+              <button className="icon-button invite-close-button" type="button" onClick={() => setInviteOpen(false)} title="Close invite">
+                <X size={17} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="invite-link-preview">{inviteUrl}</div>
+            <div className="invite-options">
+              {canUseNativeShare && (
+                <button className="invite-option" type="button" onClick={shareInvite}>
+                  <Share2 size={17} aria-hidden="true" />
+                  Apps
+                </button>
+              )}
+              <a className="invite-option" href={whatsappShareUrl} target="_blank" rel="noreferrer" onClick={() => setInviteOpen(false)}>
+                <MessageCircle size={17} aria-hidden="true" />
+                WhatsApp
+              </a>
+              <a className="invite-option" href={smsShareUrl} onClick={() => setInviteOpen(false)}>
+                <MessageCircle size={17} aria-hidden="true" />
+                SMS
+              </a>
+              <a className="invite-option" href={emailShareUrl} onClick={() => setInviteOpen(false)}>
+                <Mail size={17} aria-hidden="true" />
+                Email
+              </a>
+              <button className="invite-option" type="button" onClick={copyInviteLink}>
+                <LinkIcon size={17} aria-hidden="true" />
+                Copy Link
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {leaveConfirmOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={stayInRoom}>
+          <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="leave-room-title" onMouseDown={(event) => event.stopPropagation()}>
+            <span className="confirm-icon">
+              <DoorOpen size={22} aria-hidden="true" />
+            </span>
+            <div>
+              <span className="eyebrow">Leave room</span>
+              <h2 id="leave-room-title">Do you want to leave this watch room?</h2>
+              <p>Your video, chat, and reactions will close on this device. Other participants can continue watching.</p>
+            </div>
+            <div className="confirm-actions">
+              <button className="secondary-action stay-action" type="button" onClick={stayInRoom} disabled={leaving}>
+                Stay
+              </button>
+              <button className="secondary-action danger-action confirm-leave-action" type="button" onClick={confirmLeave} disabled={leaving}>
+                <DoorOpen size={17} aria-hidden="true" />
+                {leaving ? "Leaving" : "Leave"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <div className={`room-grid ${chatOpen && wideLayout ? "chat-dock-open" : ""}`}>
         <div className="main-column">

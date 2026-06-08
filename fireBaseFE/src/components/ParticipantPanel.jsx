@@ -1,4 +1,4 @@
-import { Crown, Users } from "lucide-react";
+import { BadgeCheck, Users } from "lucide-react";
 
 export default function ParticipantPanel({ room, uid }) {
   return (
@@ -18,7 +18,12 @@ export default function ParticipantPanel({ room, uid }) {
               <strong>{participant.userName}</strong>
               <span>{participant.userId === uid ? "You" : "Viewer"}</span>
             </div>
-            {participant.userId === room.hostId && <Crown size={16} title="Host" aria-label="Host" />}
+            {participant.userId === room.hostId && (
+              <span className="host-badge" title="Host" aria-label="Host">
+                <BadgeCheck size={14} aria-hidden="true" />
+                Host
+              </span>
+            )}
           </div>
         ))}
       </div>

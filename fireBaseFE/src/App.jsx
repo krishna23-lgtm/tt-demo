@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { hasFirebaseConfig } from "./firebase/config";
 import { ensureAnonymousUser } from "./firebase/authService";
@@ -11,6 +11,7 @@ import { clearSession, readSession, saveSession } from "./utils/session";
 
 const WATCH_BASE = "/watchTogether";
 const joinPath = `${WATCH_BASE}/join`;
+const invitedJoinPath = (roomId) => `${WATCH_BASE}/join/${roomId}`;
 const roomPath = (roomId) => `${WATCH_BASE}/room/${roomId}`;
 
 export default function App() {
@@ -73,6 +74,8 @@ export default function App() {
       <Route path={WATCH_BASE} element={<BrowsePage onCreate={handleCreate} />} />
       <Route path={`${WATCH_BASE}/browse`} element={<Navigate to={WATCH_BASE} replace />} />
       <Route path={joinPath} element={<JoinPage onJoin={handleJoin} />} />
+      <Route path={`${WATCH_BASE}/join/:roomId`} element={<InviteRoute session={session} onJoin={handleJoin} />} />
+      <Route path={`${WATCH_BASE}/invite/:roomId`} element={<InviteRoute session={session} onJoin={handleJoin} />} />
       <Route
         path={`${WATCH_BASE}/room/:roomId`}
         element={<RoomRoute session={session} initialSync={initialSync} onJoin={handleJoin} onLeave={handleLeave} />}
@@ -85,6 +88,18 @@ export default function App() {
 function LegacyRoomRedirect() {
   const { roomId } = useParams();
   return <Navigate to={roomPath(roomId)} replace />;
+}
+
+function InviteRoute({ session, onJoin }) {
+  const { roomId } = useParams();
+  const location = useLocation();
+  if (session?.roomId === roomId) {
+    return <Navigate to={roomPath(roomId)} replace />;
+  }
+  if (location.pathname.includes("/invite/")) {
+    return <Navigate to={invitedJoinPath(roomId)} replace />;
+  }
+  return <JoinPage presetRoomId={roomId} onJoin={onJoin} />;
 }
 
 function RoomRoute({ session, initialSync, onJoin, onLeave }) {

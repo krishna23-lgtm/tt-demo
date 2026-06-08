@@ -1,4 +1,4 @@
-import { Clock, MonitorPlay, Play, RadioTower, Sparkles, Star, Users } from "lucide-react";
+import { Clock, Play, RadioTower, Star, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import AppNav from "../components/AppNav";
 import CatalogRail from "../components/CatalogRail";
@@ -31,11 +31,11 @@ export default function BrowsePage({ onCreate }) {
       <header className="page-header">
         <div className="brand-lockup">
           <span className="brand-icon">
-            <MonitorPlay size={28} aria-hidden="true" />
+            <img src="/brand/xstream-play-logo.jpeg" alt="" />
           </span>
           <div>
             <span className="eyebrow">Watch together</span>
-            <h1>TechTank Play</h1>
+            <h1>Xstream Play</h1>
           </div>
         </div>
         <AppNav />
@@ -49,10 +49,6 @@ export default function BrowsePage({ onCreate }) {
           Watch Along
         </span>
         <div className="hero-content">
-          <span className="hero-kicker">
-            <Sparkles size={16} aria-hidden="true" />
-            Featured watch party
-          </span>
           <h2>{selectedTitle.title}</h2>
           <div className="hero-meta">
             <span>{selectedTitle.provider}</span>

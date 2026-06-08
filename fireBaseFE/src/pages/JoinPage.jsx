@@ -1,4 +1,4 @@
-import { LogIn, MonitorPlay, ShieldCheck } from "lucide-react";
+import { LogIn, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import AppNav from "../components/AppNav";
 
@@ -7,6 +7,7 @@ export default function JoinPage({ presetRoomId = "", onJoin }) {
   const [userName, setUserName] = useState("Aman");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const joiningInvitedRoom = Boolean(presetRoomId);
 
   useEffect(() => {
     setRoomId(presetRoomId);
@@ -30,20 +31,27 @@ export default function JoinPage({ presetRoomId = "", onJoin }) {
       <section className="entry-shell">
         <div className="brand-lockup">
           <span className="brand-icon">
-            <MonitorPlay size={28} aria-hidden="true" />
+            <img src="/brand/xstream-play-logo.jpeg" alt="" />
           </span>
           <div>
-            <span className="eyebrow">Watch together</span>
-            <h1>Join Room</h1>
+            <span className="eyebrow">Join room</span>
+            <h1>Xstream Play</h1>
           </div>
         </div>
         <AppNav />
         {error && <div className="banner error">{error}</div>}
         <form className="entry-form" onSubmit={submit}>
-          <label>
-            Room code
-            <input value={roomId} onChange={(event) => setRoomId(event.target.value.toUpperCase())} placeholder="ABCD1234" required maxLength={8} />
-          </label>
+          {joiningInvitedRoom ? (
+            <div className="preset-room-card" aria-label="Invited room">
+              <strong>Join this Xstream Play watch room</strong>
+              <p>Enter your name to start watching together.</p>
+            </div>
+          ) : (
+            <label>
+              Room code
+              <input value={roomId} onChange={(event) => setRoomId(event.target.value.toUpperCase())} placeholder="ABCD1234" required maxLength={8} />
+            </label>
+          )}
           <label>
             Your name
             <input value={userName} onChange={(event) => setUserName(event.target.value)} required maxLength={80} />

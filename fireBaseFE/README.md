@@ -33,6 +33,8 @@ Open `http://localhost:5174`.
 
 - `/watchTogether`: OTT catalog and create-room flow
 - `/watchTogether/join`: join room
+- `/watchTogether/join/:roomId`: invited join flow with room code prefilled
+- `/watchTogether/invite/:roomId`: legacy invite redirect
 - `/watchTogether/room/:roomId`: Firebase-backed watch room
 
 ## Deploy
@@ -64,7 +66,7 @@ Deploy only Firestore and Realtime Database rules:
 npm run deploy:rules
 ```
 
-Firebase Hosting runs `npm run build` automatically before hosting deploys. The deployed app serves `dist` and rewrites all routes to `index.html`, so direct room links such as `/watchTogether/room/ABCD1234` work after refresh.
+Firebase Hosting runs `npm run build` automatically before hosting deploys. The deployed app serves `dist` and rewrites all routes to `index.html`, so direct invite links such as `/watchTogether/join/ABCD1234` work after refresh.
 
 ## Production Note
 
